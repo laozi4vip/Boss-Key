@@ -27,9 +27,11 @@ class BindingPage(wx.Panel):
         # 中键按钮
         middle_sizer = wx.BoxSizer(wx.VERTICAL)
         self.add_binding_btn = buttons.GenButton(self, label="添加绑定-->")
+        self.add_all_process_btn = buttons.GenButton(self, label="添加此进程全部窗口")
         self.remove_binding_btn = buttons.GenButton(self, label="<--删除绑定")
         self.refresh_btn = buttons.GenButton(self, label="刷新进程")
         middle_sizer.Add(self.add_binding_btn, 0, wx.EXPAND | wx.ALL, 5)
+        middle_sizer.Add(self.add_all_process_btn, 0, wx.EXPAND | wx.ALL, 5)
         middle_sizer.Add(self.remove_binding_btn, 0, wx.EXPAND | wx.ALL, 5)
         middle_sizer.Add(self.refresh_btn, 0, wx.EXPAND | wx.ALL, 5)
         
@@ -51,6 +53,7 @@ class BindingPage(wx.Panel):
     
     def Bind_EVT(self):
         self.add_binding_btn.Bind(wx.EVT_BUTTON, self.OnAddBinding)
+        self.add_all_process_btn.Bind(wx.EVT_BUTTON, self.OnAddAllProcess)
         self.remove_binding_btn.Bind(wx.EVT_BUTTON, self.OnRemoveBinding)
         self.refresh_btn.Bind(wx.EVT_BUTTON, self.RefreshLeftList)
         self.left_treelist.Bind(dataview.EVT_TREELIST_ITEM_CHECKED, self.OnToggleCheck)
@@ -73,6 +76,51 @@ class BindingPage(wx.Panel):
         self.InsertTreeList(left_checked, self.right_treelist, False)
         for item in left_checked:
             self.RemoveItem(self.left_treelist, item)
+    
+    def OnAddAllProcess(self, e):
+        """添加选中进程的所有窗口"""
+        # 获取左边列表中选中的父节点（进程名）
+        selected_item = self.left_treelist.GetSelection()
+        if not selected_item.IsOk():
+            wx.MessageBox("请先在左侧列表选中一个进程节点", "提示", wx.OK | wx.ICON_INFORMATION)
+            return
+        
+        # 获取该进程下的所有子窗口
+        process_name = self.left_treelist.GetItemText(selected_item)
+        
+        # 查找该进程下的所有窗口
+        windows_to_add = []
+        child = self.left_treelist.GetFirstChild(selected_item)
+        while child.IsOk():
+            item_data = self.left_treelist.GetItemData(child)
+            if item_data:
+                windows_to_add.append(item_data)
+            child = self.left_treelist.GetNextSibling(child)
+        
+        if not windows_to_add:
+            # 如果选中的不是父节点，尝试获取父节点
+            parent = self.left_treelist.GetItemParent(selected_item)
+            if parent.IsOk():
+                process_name = self.left_treelist.GetItemText(parent)
+                child = self.left_treelist.GetFirstChild(parent)
+                while child.IsOk():
+                    item_data = self.left_treelist.GetItemData(child)
+                    if item_data:
+                        windows_to_add.append(item_data)
+                    child = self.left_treelist.GetNextSibling(child)
+        
+        if not windows_to_add:
+            wx.MessageBox("未找到该进程下的窗口", "提示", wx.OK | wx.ICON_WARNING)
+            return
+        
+        # 添加所有窗口到右侧列表
+        self.InsertTreeList(windows_to_add, self.right_treelist, False)
+        
+        # 从左侧列表移除
+        for item in windows_to_add:
+            self.RemoveItem(self.left_treelist, item)
+        
+        wx.MessageBox(f"已添加 {process_name} 的所有窗口（共 {len(windows_to_add)} 个）", "成功", wx.OK | wx.ICON_INFORMATION)
     
     def OnRemoveBinding(self, e):
         right_checked = self.ItemsData(self.right_treelist, only_checked=True)

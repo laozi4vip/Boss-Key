@@ -20,7 +20,7 @@ class OptionsPage(scrolled.ScrolledPanel):
         general_box = wx.StaticBox(self, label="常规选项")
         general_box_sizer = wx.StaticBoxSizer(general_box, wx.VERTICAL)
         
-        grid_sizer = wx.GridSizer(rows=3, cols=2, gap=(10, 20))  # 减少行数为3，冻结选项将单独放置
+        grid_sizer = wx.GridSizer(rows=6, cols=2, gap=(10, 20))  # 增加行数以容纳新选项
         
         # 添加复选框
         # 1. 隐藏窗口后静音
@@ -58,6 +58,32 @@ class OptionsPage(scrolled.ScrolledPanel):
         path_sizer.AddSpacer(5)
         path_sizer.Add(info_bitmap)
         grid_sizer.Add(path_sizer, 0, wx.ALL, 10)
+        
+        # 7. 智能模式 - 按进程名匹配（新增）
+        process_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.process_match_checkbox = wx.CheckBox(self, label="智能模式（按进程名匹配）")
+        process_tooltip = "启用此选项后，只要进程名相同（包括隐私窗口）的所有窗口都会被隐藏\n例如：Firefox正常窗口和隐私窗口都会被隐藏"
+        self.process_match_checkbox.SetToolTip(wx.ToolTip(process_tooltip))
+        process_info_icon = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_OTHER, self.FromDIP((14, 14)))
+        process_info_bitmap = wx.StaticBitmap(self, bitmap=process_info_icon)
+        process_info_bitmap.SetToolTip(wx.ToolTip(process_tooltip))
+        process_sizer.Add(self.process_match_checkbox)
+        process_sizer.AddSpacer(5)
+        process_sizer.Add(process_info_bitmap)
+        grid_sizer.Add(process_sizer, 0, wx.ALL, 10)
+        
+        # 8. 手动多选模式（新增）
+        multi_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.multi_window_bind_checkbox = wx.CheckBox(self, label="手动多选模式")
+        multi_tooltip = "启用此选项后，可以绑定同一程序的多个窗口（如Firefox的多个标签页窗口）\n关闭文件路径匹配后生效"
+        self.multi_window_bind_checkbox.SetToolTip(wx.ToolTip(multi_tooltip))
+        multi_info_icon = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_OTHER, self.FromDIP((14, 14)))
+        multi_info_bitmap = wx.StaticBitmap(self, bitmap=multi_info_icon)
+        multi_info_bitmap.SetToolTip(wx.ToolTip(multi_tooltip))
+        multi_sizer.Add(self.multi_window_bind_checkbox)
+        multi_sizer.AddSpacer(5)
+        multi_sizer.Add(multi_info_bitmap)
+        grid_sizer.Add(multi_sizer, 0, wx.ALL, 10)
         
         general_box_sizer.Add(grid_sizer, 0, wx.EXPAND | wx.ALL, 10)
         sizer.Add(general_box_sizer, 0, wx.EXPAND | wx.ALL, 10)
@@ -140,6 +166,18 @@ class OptionsPage(scrolled.ScrolledPanel):
         self.click_hide_checkbox.SetValue(Config.click_to_hide)
         self.hide_icon_checkbox.SetValue(Config.hide_icon_after_hide)
         self.path_match_checkbox.SetValue(Config.path_match)
+        
+        # 新增选项
+        if hasattr(Config, 'process_match'):
+            self.process_match_checkbox.SetValue(Config.process_match)
+        else:
+            self.process_match_checkbox.SetValue(False)
+            
+        if hasattr(Config, 'multi_window_bind'):
+            self.multi_window_bind_checkbox.SetValue(Config.multi_window_bind)
+        else:
+            self.multi_window_bind_checkbox.SetValue(True)
+        
         self.freeze_checkbox.SetValue(Config.freeze_after_hide)
         
         # 设置增强冻结选项
@@ -170,6 +208,8 @@ class OptionsPage(scrolled.ScrolledPanel):
         Config.click_to_hide = self.click_hide_checkbox.GetValue()
         Config.hide_icon_after_hide = self.hide_icon_checkbox.GetValue()
         Config.path_match = self.path_match_checkbox.GetValue()
+        Config.process_match = self.process_match_checkbox.GetValue()  # 保存智能模式配置
+        Config.multi_window_bind = self.multi_window_bind_checkbox.GetValue()  # 保存手动多选模式配置
         Config.freeze_after_hide = self.freeze_checkbox.GetValue()
         Config.enhanced_freeze = self.enhanced_freeze_checkbox.GetValue()
         
@@ -180,6 +220,8 @@ class OptionsPage(scrolled.ScrolledPanel):
         self.click_hide_checkbox.SetValue(False)
         self.hide_icon_checkbox.SetValue(False)
         self.path_match_checkbox.SetValue(False)
+        self.process_match_checkbox.SetValue(False)
+        self.multi_window_bind_checkbox.SetValue(True)
         self.freeze_checkbox.SetValue(False)
         self.enhanced_freeze_checkbox.SetValue(False)
         

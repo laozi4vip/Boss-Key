@@ -8,6 +8,30 @@
 ![Supported Platform](https://img.shields.io/badge/Platform-Windows_10\+-cornflowerblue)
 ![Python Version](https://img.shields.io/badge/Python-3.11.9-coral)
 
+> ⚠️ **本版本为修改版**，基于原版 [IvanHanloth/Boss-Key](https://github.com/IvanHanloth/Boss-Key) 添加了以下功能：
+
+## 修改版新增功能
+
+### 1. 智能模式（按进程名匹配）
+- 启用后，只要进程名相同的所有窗口都会被隐藏
+- **解决 Firefox 隐私窗口无法同时隐藏的问题**
+- 例如：Firefox 正常窗口和隐私窗口都会被一起隐藏
+
+### 2. 手动多选模式
+- 允许绑定同一程序的多个窗口
+- 新增「添加此进程全部窗口」按钮，一键绑定该进程的所有窗口
+
+## 使用方法
+
+1. 克隆或下载本仓库
+2. 安装依赖：`pip install -r requirements.txt`
+3. 运行：`python main/Boss-Key.py`
+
+## 鸣谢
+
+- 感谢原作者 [IvanHanloth](https://github.com/IvanHanloth) 的开源贡献
+- 感谢雪藏HsFreezer提供的进程冻结实现思路
+
 老板来了？快用Boss-Key老板键一键隐藏窗口！上班摸鱼必备神器。
 
 支持多窗口隐藏、多进程隐藏、自定义热键、隐藏活动窗口、静音窗口、暂停视频播放等超多功能，完全免费、开源，无强制弹窗等

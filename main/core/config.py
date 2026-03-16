@@ -53,6 +53,11 @@ SOFTWARE.
     click_to_hide = True
     hide_icon_after_hide = False
     path_match = True
+    process_match = False  # 新增：按进程名匹配（智能模式），忽略路径和窗口标题
+    
+    # 手动多选模式：允许绑定同一进程的多个窗口
+    multi_window_bind = True  # 新增：允许绑定多个同名进程的窗口
+    
     middle_button_hide = False  # 新增：鼠标中键隐藏功能开关
     side_button1_hide = False   # 鼠标侧键1隐藏功能开关
     side_button2_hide = False   # 鼠标侧键2隐藏功能开关
@@ -107,6 +112,8 @@ SOFTWARE.
         Config.hide_current = config.get("setting", {}).get("hide_current", True)
         Config.hide_icon_after_hide = config.get("setting", {}).get("hide_icon_after_hide", False)
         Config.path_match = config.get("setting", {}).get("path_match", False)
+        Config.process_match = config.get("setting", {}).get("process_match", False)  # 加载智能模式配置
+        Config.multi_window_bind = config.get("setting", {}).get("multi_window_bind", True)  # 加载手动多选模式配置
         Config.freeze_after_hide = config.get("setting", {}).get("freeze_after_hide", False)  # 加载新配置项
         Config.enhanced_freeze = config.get("setting", {}).get("enhanced_freeze", False)  # 加载新配置项
         Config.middle_button_hide = config.get("setting", {}).get("middle_button_hide", False)  # 加载鼠标中键隐藏设置
@@ -151,6 +158,8 @@ SOFTWARE.
                 'click_to_hide': Config.click_to_hide,
                 'hide_icon_after_hide': Config.hide_icon_after_hide,
                 'path_match': Config.path_match,
+                'process_match': Config.process_match,  # 保存智能模式配置
+                'multi_window_bind': Config.multi_window_bind,  # 保存手动多选模式配置
                 'freeze_after_hide': Config.freeze_after_hide,  # 保存新配置项
                 'enhanced_freeze': Config.enhanced_freeze,  # 保存新配置项
                 'middle_button_hide': Config.middle_button_hide,  # 保存鼠标中键隐藏设置

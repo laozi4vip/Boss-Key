@@ -337,7 +337,19 @@ class HotkeyListener():
 
         for i in outer:
             for j in inner:
-                if tool.isSameWindow(i, j, False, not Config.path_match):
+                # 使用智能模式（process_match）或手动多选模式（multi_window_bind）
+                if Config.process_match:
+                    # 智能模式：仅按进程名匹配
+                    if tool.isSameWindow(i, j, False, False, process_only=True):
+                        if outer == Config.hide_binding:  # 此时i是绑定的元素，j是窗口元素，需要隐藏j
+                            needHide.append(j.hwnd)
+                            if Config.freeze_after_hide and hasattr(j, 'PID') and j.PID:
+                                frozen_pids.append(j.PID)
+                        else:
+                            needHide.append(i.hwnd)
+                            if Config.freeze_after_hide and hasattr(i, 'PID') and i.PID:
+                                frozen_pids.append(i.PID)
+                elif tool.isSameWindow(i, j, False, not Config.path_match):
                     if outer == Config.hide_binding:  # 此时i是绑定的元素，j是窗口元素，需要隐藏j
                         needHide.append(j.hwnd)
                         if Config.freeze_after_hide and hasattr(j, 'PID') and j.PID:
@@ -346,7 +358,18 @@ class HotkeyListener():
                         needHide.append(i.hwnd)
                         if Config.freeze_after_hide and hasattr(i, 'PID') and i.PID:
                             frozen_pids.append(i.PID)
-                    break
+                # 如果启用了 multi_window_bind，在非严格模式下继续查找更多匹配
+                elif Config.multi_window_bind and not Config.path_match:
+                    # 检查进程名是否相同（用于多窗口匹配）
+                    if hasattr(i, 'process') and hasattr(j, 'process') and i.process == j.process:
+                        if outer == Config.hide_binding:
+                            needHide.append(j.hwnd)
+                            if Config.freeze_after_hide and hasattr(j, 'PID') and j.PID:
+                                frozen_pids.append(j.PID)
+                        else:
+                            needHide.append(i.hwnd)
+                            if Config.freeze_after_hide and hasattr(i, 'PID') and i.PID:
+                                frozen_pids.append(i.PID)
 
         if Config.hide_current:  # 插入当前窗口的句柄
             hwnd = GetForegroundWindow()

@@ -283,18 +283,24 @@ def getAllWindows()-> list[WindowInfo]:
 
     return windows
 
-def isSameWindow(w1:WindowInfo, w2:WindowInfo, auto=False, strict=True):
+def isSameWindow(w1:WindowInfo, w2:WindowInfo, auto=False, strict=True, process_only=False):
     """
     判断两个窗口的信息是否指向同一个窗口
     w1、w2: WindowInfo对象或字典
     auto: 智能匹配模式，默认False
     strict: 严格模式，默认True，非严格模式下只判断进程名称是否相同
+    process_only: 进程名匹配模式，仅判断进程名称是否相同（忽略路径和标题）
     """
     # 转换可能的字典为WindowInfo对象
     if isinstance(w1, dict):
         w1 = WindowInfo.from_dict(w1)
     if isinstance(w2, dict):
         w2 = WindowInfo.from_dict(w2)
+    
+    # 进程名匹配模式（智能模式）- 仅比较进程名
+    if process_only:
+        process_name_same = w1.process == w2.process and w1.process not in ["explorer.exe"]
+        return process_name_same
     
     ## 一模一样的两个，肯定是同一个
     if w1 == w2:
