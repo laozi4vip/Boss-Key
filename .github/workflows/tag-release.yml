@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - '*'  # 监听所有标签的推送事件
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag'
+        required: false
+        default: 'v2.1.1'
 
 jobs:
   build-and-release:
@@ -73,7 +79,7 @@ jobs:
            out/Boss-Key-${{ github.ref_name }}-onefile.exe
            out/Boss-Key-${{ github.ref_name }}-multifile.zip
            
-          token: ${{ secrets.RELEASE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           name: Boss Key ${{ github.ref_name }}
           append_body: |
             The executable file for version ${{ github.ref_name }}
@@ -120,7 +126,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: .github/inno-script/output/Boss-Key-${{ github.ref_name }}-Installer.exe
-        token: ${{ secrets.RELEASE }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: ${{ github.ref_name }}
         draft: false
         prerelease: false
