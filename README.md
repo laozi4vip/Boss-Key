@@ -1,31 +1,39 @@
-# Boss-Key
+# Boss-Key 修改版
 
 ![Boss-Key logo bannar](/src/static/bannar.jpg)
 
-![Github Release Version](https://img.shields.io/github/v/release/IvanHanloth/Boss-Key)
-![Github Repo License](https://img.shields.io/github/license/IvanHanloth/Boss-Key)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/IvanHanloth/Boss-Key/tag-release.yml)
-![Supported Platform](https://img.shields.io/badge/Platform-Windows_10\+-cornflowerblue)
-![Python Version](https://img.shields.io/badge/Python-3.11.9-coral)
+![Github Release Version](https://img.shields.io/github/v/release/laozi4vip/Boss-Key)
+![Github Repo License](https://img.shields.io/github/license/laozi4vip/Boss-Key)
 
-> ⚠️ **本版本为修改版**，基于原版 [IvanHanloth/Boss-Key](https://github.com/IvanHanloth/Boss-Key) 添加了以下功能：
+> ⚠️ **本版本为修改版**，基于原版 [IvanHanloth/Boss-Key](https://github.com/IvanHanloth/Boss-Key) 修改
 
-## 修改版新增功能
+## 修改版新功能
 
-### 1. 智能模式（按进程名匹配）
+### 1. 智能模式（按进程名匹配）✅ 新增
 - 启用后，只要进程名相同的所有窗口都会被隐藏
 - **解决 Firefox 隐私窗口无法同时隐藏的问题**
 - 例如：Firefox 正常窗口和隐私窗口都会被一起隐藏
 
-### 2. 手动多选模式
+### 2. 手动多选模式 ✅ 新增
 - 允许绑定同一程序的多个窗口
 - 新增「添加此进程全部窗口」按钮，一键绑定该进程的所有窗口
 
-## 使用方法
+## 使用说明
 
-1. 克隆或下载本仓库
-2. 安装依赖：`pip install -r requirements.txt`
-3. 运行：`python main/Boss-Key.py`
+### 基础使用
+1. 下载安装包并安装
+2. 首次打开会自动弹出设置页面
+3. 在「窗口绑定」页面绑定需要隐藏的窗口
+4. 在「其他选项」中启用「智能模式（按进程名匹配）」可隐藏 Firefox 隐私窗口
+
+### 隐藏 Firefox 隐私窗口
+1. 打开 Firefox 正常窗口和隐私窗口
+2. 打开 Boss-Key 设置 → 窗口绑定
+3. 刷新进程，勾选 Firefox 相关窗口
+4. 点击「添加绑定」或「添加此进程全部窗口」
+5. 切换到「其他选项」页面
+6. 勾选「智能模式（按进程名匹配）」
+7. 点击「保存设置」
 
 ## 鸣谢
 
