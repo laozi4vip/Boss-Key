@@ -8,12 +8,21 @@ from .model import WindowInfo
  
 class Config:
     AppName = "Boss Key"
-    AppVersion = "v2.1.0.0"
-    AppReleaseDate = "2025-04-21"
-    AppAuthor = "IvanHanloth"
-    AppDescription = "老板来了？快用Boss-Key老板键一键隐藏静音当前窗口！上班摸鱼必备神器"
-    AppCopyRight = "Copyright © 2022-2025 Ivan Hanloth All Rights Reserved."
-    AppWebsite = "https://github.com/IvanHanloth/Boss-Key"
+    AppVersion = "v2.1.1"
+    AppReleaseDate = "2026-03-16"
+    AppAuthor = "laozi4vip (基于 IvanHanloth 原版修改)"
+    AppDescription = """Boss-Key 修改版
+
+基于原版 IvanHanloth/Boss-Key 修改
+
+修改版新功能：
+1. 智能模式（按进程名匹配）- 解决Firefox隐私窗口无法同时隐藏的问题
+2. 手动多选模式 - 允许绑定同一程序的多个窗口
+
+作者：laozi4vip
+GitHub：https://github.com/laozi4vip/Boss-Key"""
+    AppCopyRight = "Copyright © 2022-2026 laozi4vip All Rights Reserved."
+    AppWebsite = "https://github.com/laozi4vip/Boss-Key"
     AppLicense = """MIT License
 
 Copyright (c) 2022 Ivan Hanloth
