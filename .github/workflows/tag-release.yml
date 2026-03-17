@@ -92,8 +92,6 @@ jobs:
 
   compile-to-installer:
     runs-on: windows-latest
-  compile-to-installer:
-    runs-on: windows-latest
     needs: build-and-release
     steps:
     - name: Checkout code 
