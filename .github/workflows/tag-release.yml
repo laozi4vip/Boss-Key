@@ -31,24 +31,29 @@ jobs:
         shell: pwsh
         run: |
           if ("${{ github.ref_type }}" -eq "tag" -and "${{ github.ref_name }}") {
-            $tag = "${{ github.ref_name }}"
+            $raw = "${{ github.ref_name }}"
           } else {
-            $tag = "${{ inputs.version }}"
+            $raw = "${{ inputs.version }}"
           }
 
-          if ([string]::IsNullOrWhiteSpace($tag)) {
+          if ([string]::IsNullOrWhiteSpace($raw)) {
             throw "Version tag is empty."
           }
 
-          $tag = $tag.Trim()                    # e.g. v2.1.1 / vv2.1.1
-          $clean = $tag -replace '^v+',''       # -> 2.1.1
+          $raw = $raw.Trim()
+          $clean = $raw -replace '^v+',''   # 去掉所有前导 v
+          if ([string]::IsNullOrWhiteSpace($clean)) {
+            throw "Invalid version tag: $raw"
+          }
+
+          $tag = "v$clean"                  # 统一成单个 v 前缀，避免 vv2.1.1
 
           $parts = $clean.Split('.')
           while ($parts.Length -lt 4) { $parts += '0' }
-          $filever = ($parts[0..3] -join '.')   # -> 2.1.1.0
+          $filever = ($parts[0..3] -join '.')   # 2.1.1.0
 
-          "tag=$tag"       | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "clean=$clean"   | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "tag=$tag"         | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "clean=$clean"     | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "filever=$filever" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
           Write-Host "tag=$tag"
@@ -81,10 +86,12 @@ jobs:
           if (!(Test-Path "out/Boss-Key.exe")) { throw "Missing out/Boss-Key.exe" }
 
           Rename-Item "out/Boss-Key.exe" $newExeName
-          Copy-Item "out/$newExeName" "out/Boss-Key.exe" -Force  # 给安装包编译保留固定文件名
+          Copy-Item "out/$newExeName" "out/Boss-Key.exe" -Force  # 给 Inno 脚本保留固定文件名
 
           if (Test-Path "out/Boss-Key.dist") {
             Compress-Archive -Path "out/Boss-Key.dist\*" -DestinationPath "out/Boss-Key-$tag-multifile.zip" -Force
+          } else {
+            throw "Missing out/Boss-Key.dist"
           }
 
           Get-ChildItem out -Recurse
@@ -142,7 +149,8 @@ jobs:
         run: |
           choco install innosetup --no-progress -y
 
-      - name: Compile installer
+      - name: Find ISCC path
+        id: iscc
         shell: pwsh
         run: |
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
@@ -150,22 +158,38 @@ jobs:
             $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
           }
           if ([string]::IsNullOrWhiteSpace($iscc)) {
-            throw "ISCC.exe not found."
+            throw "ISCC.exe not found"
           }
+          "path=$iscc" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "ISCC: $iscc"
 
-          $tag = "${{ needs.build-and-release.outputs.tag }}"   
-          & $iscc "/DMyAppVersion=$tag" ".\.github\inno-script\Boss-Key.iss"
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $iscc = "${{ steps.iscc.outputs.path }}"
+          if ([string]::IsNullOrWhiteSpace($iscc)) { throw "ISCC output is empty" }
+
+          $script = ".\.github\inno-script\Boss-Key.iss"
+          if (!(Test-Path $script)) { throw "ISS script not found: $script" }
+
+          $outDir = ".\installer-out"
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+          $tag = "${{ needs.build-and-release.outputs.tag }}"
+          & $iscc "/DMyAppVersion=$tag" "/O$outDir" $script
+
+          Get-ChildItem $outDir -Recurse
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ needs.build-and-release.outputs.tag }}-Installer
-          path: .github/inno-script/output/*.exe
+          path: installer-out/*.exe
 
       - name: Attach installer to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.build-and-release.outputs.tag }}
-          files: .github/inno-script/output/*.exe
+          files: installer-out/*.exe
           draft: false
           prerelease: false
