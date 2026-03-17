@@ -97,6 +97,9 @@ class QuickLaunchPage(scrolled.ScrolledPanel):
         try:
             with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=4)
+            # 保存后重新绑定热键
+            if hasattr(Config, 'HotkeyListener') and Config.HotkeyListener:
+                Config.HotkeyListener.reBind()
         except Exception as e:
             print(f"保存配置失败: {e}")
     
@@ -163,41 +166,34 @@ class QuickLaunchPage(scrolled.ScrolledPanel):
         dialog.Destroy()
     
     def on_from_running(self, event):
-        """从运行程序绑定"""
+        """从运行程序绑定 - 使用进程枚举"""
         running = []
         
-        def callback(hwnd, wins):
+        # 直接遍历所有进程获取可执行程序路径
+        for proc in psutil.process_iter(['exe', 'name']):
             try:
-                if hwnd and user32.IsWindow(hwnd) and user32.IsWindowVisible(hwnd):
-                    length = user32.GetWindowTextLengthW(hwnd)
-                    if length > 0:
-                        title = ctypes.create_unicode_buffer(length + 1)
-                        user32.GetWindowTextW(hwnd, title, length + 1)
-                        
-                        pid = ctypes.c_ulong()
-                        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-                        try:
-                            proc = psutil.Process(pid.value)
-                            exe_path = proc.exe()
-                            exe_name = os.path.basename(exe_path)
-                            if exe_name and exe_name not in [p['exe'] for p in running]:
-                                running.append({
-                                    'title': title.value,
-                                    'exe': exe_name,
-                                    'path': exe_path
-                                })
-                        except:
-                            pass
-            except:
+                exe = proc.info.get('exe')
+                if exe and exe.endswith('.exe'):
+                    exe_name = os.path.basename(exe)
+                    # 避免重复
+                    if exe_name not in [p['exe'] for p in running]:
+                        # 获取窗口标题
+                        title = self.get_process_window_title(proc)
+                        if title:
+                            running.append({
+                                'title': title,
+                                'exe': exe_name,
+                                'path': exe
+                            })
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 pass
-            return True
-        
-        WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
-        user32.EnumWindows(WNDENUMPROC(callback), None)
         
         if not running:
             wx.MessageBox("没有找到运行的程序", "提示")
             return
+        
+        # 按名称排序
+        running.sort(key=lambda x: x['title'] or x['exe'])
         
         # 显示选择对话框
         dialog = wx.Dialog(self, title="选择程序", size=(500, 400))
@@ -208,7 +204,8 @@ class QuickLaunchPage(scrolled.ScrolledPanel):
         
         listbox = wx.ListBox(panel, size=(-1, 300))
         for p in running:
-            listbox.Append(f"{p['title']} - {p['exe']}")
+            display = f"{p['title']} - {p['exe']}" if p['title'] else p['exe']
+            listbox.Append(display)
         sizer.Add(listbox, 1, wx.EXPAND|wx.ALL, 5)
         
         selected = [None]
@@ -227,6 +224,51 @@ class QuickLaunchPage(scrolled.ScrolledPanel):
                     'path': selected[0]['path'],
                     'hotkey': ''
                 })
+                self.save_config()
+                self.refresh_list()
+                dialog.Destroy()
+        
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn_sizer.Add(wx.Button(panel, wx.ID_OK, "确定"), 0, wx.ALL, 5)
+        btn_sizer.Add(wx.Button(panel, wx.ID_CANCEL, "取消"), 0, wx.ALL, 5)
+        sizer.Add(btn_sizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        
+        panel.SetSizer(sizer)
+        dialog.ShowModal()
+        dialog.Destroy()
+    
+    def get_process_window_title(self, proc):
+        """获取进程的主窗口标题"""
+        try:
+            pid = proc.pid
+            windows = []
+            
+            def callback(hwnd, wins):
+                try:
+                    if hwnd and user32.IsWindow(hwnd) and user32.IsWindowVisible(hwnd):
+                        # 检查是否属于该进程
+                        window_pid = ctypes.c_ulong()
+                        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(window_pid))
+                        if window_pid.value == pid:
+                            length = user32.GetWindowTextLengthW(hwnd)
+                            if length > 0:
+                                title = ctypes.create_unicode_buffer(length + 1)
+                                user32.GetWindowTextW(hwnd, title, length + 1)
+                                wins.append(title.value)
+                except:
+                    pass
+                return True
+            
+            WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
+            user32.EnumWindows(WNDENUMPROC(callback), windows)
+            
+            # 返回第一个非空标题
+            for title in windows:
+                if title and len(title) > 0:
+                    return title
+        except:
+            pass
+        return ""
                 self.save_config()
                 self.refresh_list()
                 dialog.Destroy()
