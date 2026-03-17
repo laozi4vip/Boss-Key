@@ -113,24 +113,33 @@ def resume_process(pid):
 
 def checkUpdate():
     requests.packages.urllib3.disable_warnings()
-    # 获取最新版本信息
+    # 获取最新版本信息 - 改为用户自己的仓库
     try:
-        response = requests.get("https://ivanhanloth.github.io/Boss-Key/releases.json", verify=False,timeout=10)
+        response = requests.get("https://api.github.com/repos/laozi4vip/Boss-Key/releases/latest", verify=False,timeout=10, headers={"Accept": "application/vnd.github+json"})
         
         if response.status_code != 200:
             raise Exception("无法检查更新")
     except:
         raise Exception("无法检查更新")
 
-    releases = json.loads(response.text)
-
-    for release in releases:
-        release['published_at'] = datetime.datetime.strptime(release['published_at'], "%Y-%m-%dT%H:%M:%SZ")
+    release = json.loads(response.text)
     
     # 找到最新的版本
-    latest_release = max(releases, key=lambda x: x['published_at'])
+    # 构建返回格式兼容旧版本
+    release['published_at'] = datetime.datetime.strptime(release['published_at'].replace('Z', '+0000'), "%Y-%m-%dT%H:%M:%S%z")
+    release['tag_name'] = release.get('tag_name', release.get('name', ''))
+    release['body'] = release.get('body', '')
     
-    return latest_release
+    # 处理 assets
+    assets = []
+    for asset in release.get('assets', []):
+        assets.append({
+            'name': asset.get('name', ''),
+            'browser_download_url': asset.get('browser_download_url', '')
+        })
+    release['assets'] = assets
+    
+    return release
 
 def addStartup(program_name, program_path):
     """
