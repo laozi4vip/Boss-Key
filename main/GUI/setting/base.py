@@ -4,6 +4,7 @@ import core.tools as tool
 from .binding_page import BindingPage
 from .hotkeys_page import HotkeysPage
 from .options_page import OptionsPage
+from .quicklaunch_page import QuickLaunchPage
 
 class SettingWindow(wx.Frame):
     def __init__(self, id=None):
@@ -28,10 +29,12 @@ class SettingWindow(wx.Frame):
         # 添加各个设置页面
         self.binding_page = BindingPage(self.notebook)
         self.hotkeys_page = HotkeysPage(self.notebook)
+        self.quicklaunch_page = QuickLaunchPage(self.notebook)
         self.options_page = OptionsPage(self.notebook)
         
         self.notebook.AddPage(self.binding_page, "窗口绑定")
         self.notebook.AddPage(self.hotkeys_page, "热键设置")
+        self.notebook.AddPage(self.quicklaunch_page, "快捷启动")
         self.notebook.AddPage(self.options_page, "其他选项")
         
         sizer.Add(self.infobar, 0, wx.EXPAND | wx.ALL, 5)
