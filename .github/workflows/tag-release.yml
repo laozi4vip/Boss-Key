@@ -103,22 +103,14 @@ jobs:
         name: ${{ github.ref_name }}-Build
         path: ./software
 
-    - name: Download and run Inno Setup
+    - name: Download Inno Setup
       run: |
-        Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "is.exe"
-        Start-Process -FilePath ".\is.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/SP-","/NORESTART" -Wait
-
-    - name: Find Inno Setup path
-      run: |
-        $innoPath = Get-ChildItem -Path "C:\Program Files (x86)" -Recurse -Filter "ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-        Write-Host "Inno Setup path: $innoPath"
-        Write-Host "##vso[task.setvariable variable=ISCC]$innoPath"
+        Invoke-WebRequest -Uri "https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe" -OutFile "innosetup.exe"
+        Start-Process -FilePath ".\innosetup.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/SP-","/NORESTART","/DIR=`"C:\InnoSetup`"" -Wait -NoNewWindow
 
     - name: Compile Installer
-      env:
-        ISCC: ${{ env.ISCC }}
       run: |
-        & $env:ISCC /DMyAppVersion='${{ github.ref_name }}' ./.github/inno-script/Boss-Key.iss
+        & "C:\InnoSetup\ISCC.exe" /DMyAppVersion='${{ github.ref_name }}' ./.github/inno-script/Boss-Key.iss
 
     - name: Upload Installer
       uses: actions/upload-artifact@v4
