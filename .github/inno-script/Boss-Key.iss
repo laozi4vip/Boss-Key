@@ -33,8 +33,10 @@ SolidCompression=yes
 WizardStyle=modern
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "en"; MessagesFile: "compiler:Default.isl"
+#ifexist "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
+Name: "zhcn"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+#endif
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
