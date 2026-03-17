@@ -1,7 +1,7 @@
 from core.config import Config
 import core.tools as tool
-from win32gui import GetForegroundWindow, ShowWindow
-from win32con import SW_HIDE, SW_SHOW
+from win32gui import GetForegroundWindow, ShowWindow, SetForegroundWindow
+from win32con import SW_HIDE, SW_SHOW, SW_MINIMIZE, SW_RESTORE
 import win32process
 import win32api
 import sys
@@ -11,6 +11,13 @@ import threading
 import time
 import os
 import wx
+import psutil
+import subprocess
+import json
+import ctypes
+
+# Windows API
+user32 = ctypes.windll.user32
 
 class HotkeyListener():
     def __init__(self):
@@ -258,10 +265,85 @@ class HotkeyListener():
             Config.hide_hotkey: self.onHide,
             Config.close_hotkey: self.Close
         }
+        
+        # 添加快捷启动的热键
+        quicklaunch_config = self.load_quicklaunch_config()
+        for program in quicklaunch_config.get('programs', []):
+            hotkey = program.get('hotkey', '')
+            if hotkey:
+                hotkeys[hotkey] = lambda p=program: self.quick_launch_toggle(p)
+        
         hotkeys = tool.keyConvert(hotkeys)
                 
         self.listener = multiprocessing.Process(target=self.ListenerProcess, daemon=True, args=(hotkeys,), name="Boss-Key热键监听进程")
         self.listener.start()
+    
+    def load_quicklaunch_config(self):
+        """加载快捷启动配置"""
+        config_path = os.path.join(Config.root_path, "quicklaunch_config.json")
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except:
+                pass
+        return {"programs": []}
+    
+    def quick_launch_toggle(self, program):
+        """快捷启动/切换窗口"""
+        path = program.get('path', '')
+        if not path:
+            return
+        
+        exe_name = os.path.basename(path).lower()
+        hwnd = self.find_window_by_exe(exe_name)
+        
+        if hwnd:
+            # 窗口存在，切换最小化/恢复
+            if user32.IsIconic(hwnd):
+                # 恢复窗口并置顶
+                user32.ShowWindow(hwnd, SW_RESTORE)
+                user32.SetForegroundWindow(hwnd)
+                # 置顶窗口
+                user32.SetWindowPos(hwnd, -1, 0, 0, 0, 0, 0x0001 | 0x0002)
+            else:
+                # 最小化窗口
+                user32.ShowWindow(hwnd, SW_MINIMIZE)
+        else:
+            # 启动程序
+            if os.path.exists(path):
+                subprocess.Popen(path)
+    
+    def find_window_by_exe(self, exe_name):
+        """根据exe名称查找窗口"""
+        windows = []
+        
+        def callback(hwnd, wins):
+            try:
+                if hwnd and user32.IsWindow(hwnd) and user32.IsWindowVisible(hwnd):
+                    length = user32.GetWindowTextLengthW(hwnd)
+                    if length > 0:
+                        wins.append(hwnd)
+            except:
+                pass
+            return True
+        
+        WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
+        try:
+            user32.EnumWindows(WNDENUMPROC(callback), windows)
+        except:
+            pass
+        
+        for hwnd in windows:
+            pid = ctypes.c_ulong()
+            try:
+                user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                proc = psutil.Process(pid.value)
+                if exe_name in proc.name().lower():
+                    return hwnd
+            except:
+                pass
+        return None
 
     def get_windows_state(self):
         """获取窗口状态，1=显示，0=隐藏"""
