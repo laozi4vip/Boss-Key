@@ -103,14 +103,37 @@ jobs:
         name: ${{ github.ref_name }}-Build
         path: ./software
 
-    - name: Download Inno Setup
+    - name: Install NSIS
       run: |
-        Invoke-WebRequest -Uri "https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe" -OutFile "innosetup.exe"
-        Start-Process -FilePath ".\innosetup.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/SP-","/NORESTART","/DIR=`"C:\InnoSetup`"" -Wait -NoNewWindow
+        choco install nsis -y
 
     - name: Compile Installer
       run: |
-        & "C:\InnoSetup\ISCC.exe" /DMyAppVersion='${{ github.ref_name }}' ./.github/inno-script/Boss-Key.iss
+        $version = '${{ github.ref_name }}'
+        $issContent = @"
+[Setup]
+AppId={{C993A2A8-0714-46E7-A393-DF3F19C43537}
+AppName=Boss-Key
+AppVersion=$version
+AppPublisher=laozi4vip
+DefaultDirName={autopf}\Boss-Key
+DefaultGroupName=Boss-Key
+OutputDir=output
+OutputBaseFilename=Boss-Key-$version-Installer
+Compression=lzma
+SolidCompression=yes
+WizardStyle=modern
+
+[Files]
+Source=software\*; DestDir="{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name="{group}\Boss-Key"; Filename="{app}\Boss-Key.exe"
+Name="{autodesktop}\Boss-Key"; Filename="{app}\Boss-Key.exe"
+"@
+        $issContent | Out-File -FilePath "boss-key.iss" -Encoding utf8
+        mkdir output
+        & "C:\Program Files (x86)\NSIS\makensis.exe" boss-key.iss
 
     - name: Upload Installer
       uses: actions/upload-artifact@v4
